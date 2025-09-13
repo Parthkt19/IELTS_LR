@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Listening & Reading - Question Bank (40)</title>
+  <style>
+    :root{
+      --accent: #2563eb;
+      --muted: #6b7280;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --success: #e6ffed;
+      --danger: #fff0f0;
+    }
+    *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;background:var(--bg);padding:24px;color:#111827}
+    .container{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:20px;margin:0}
+    p{color:var(--muted);margin:4px 0 0}
+    .card{background:var(--card);padding:16px;border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,0.06)}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    thead th{background:#f1f5f9;padding:10px;border-bottom:1px solid #e6eef8;text-align:left;font-weight:600}
+    tbody td{padding:8px;border-bottom:1px solid #eef2f7;vertical-align:middle}
+    .seq{width:70px;text-align:center;color:var(--muted)}
+    .answer input{width:100%;padding:8px;border:1px solid #e6eef8;border-radius:6px}
+    .correct{width:140px;text-align:center}
+    .controls{display:flex;gap:8px;align-items:center}
+    button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    button.secondary{background:#fff;border:1px solid #e5e7eb;color:#111}
+    .small{padding:6px 8px;font-size:14px}
+    .note{font-size:13px;color:var(--muted);margin-top:8px}
+    .row-highlight-correct{background:var(--success)}
+    .row-highlight-wrong{background:var(--danger)}
+    @media (max-width:700px){
+      .seq{width:48px}
+      .correct{width:100px}
+      thead th:nth-child(2),tbody td:nth-child(2){display:block}
+      table,thead,tbody,tr,th,td{display:block}
+      thead{display:none}
+      tr{margin-bottom:8px;border-radius:6px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Listening & Reading — Question Bank</h1>
+        <p>40 questions · Columns: Seq No, Answer, Correct?</p>
+      </div>
+      <div class="controls">
+        <button id="exportCsv" class="small">Export CSV</button>
+        <button id="downloadJson" class="small secondary">Download JSON</button>
+        <button id="clearAll" class="small secondary">Clear All</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <table id="qTable" aria-label="Question bank table">
+        <thead>
+          <tr>
+            <th class="seq">#</th>
+            <th>Answer</th>
+            <th class="correct">Correct?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- JS will inject 40 rows here -->
+        </tbody>
+      </table>
+
+      <p class="note">Tip: check the box if the answer is correct. Use Export CSV to download results for import into Excel or Google Sheets.</p>
+    </section>
+  </div>
+
+  <script>
+    const ROWS = 40;
+    const tbody = document.querySelector('#qTable tbody');
+
+    function createRow(i){
+      const tr = document.createElement('tr');
+      tr.dataset.index = i+1;
+
+      // Seq
+      const tdSeq = document.createElement('td');
+      tdSeq.className = 'seq';
+      tdSeq.textContent = i+1;
+      tr.appendChild(tdSeq);
+
+      // Answer
+      const tdAnswer = document.createElement('td');
+      tdAnswer.className = 'answer';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = `Enter answer for Q${i+1}`;
+      input.dataset.field = 'answer';
+      input.addEventListener('input', ()=> updateRowStyle(tr));
+      tdAnswer.appendChild(input);
+      tr.appendChild(tdAnswer);
+
+      // Correct checkbox
+      const tdCheck = document.createElement('td');
+      tdCheck.className = 'correct';
+      const label = document.createElement('label');
+      label.style.display = 'inline-flex';
+      label.style.alignItems = 'center';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.dataset.field = 'correct';
+      checkbox.addEventListener('change', ()=> updateRowStyle(tr));
+      label.appendChild(checkbox);
+      const span = document.createElement('span');
+      span.textContent = ' Correct';
+      span.style.marginLeft = '8px';
+      span.style.color = '#374151';
+      label.appendChild(span);
+      tdCheck.appendChild(label);
+      tr.appendChild(tdCheck);
+
+      return tr;
+    }
+
+    function updateRowStyle(tr){
+      const ans = tr.querySelector('input[data-field="answer"]').value.trim();
+      const checked = tr.querySelector('input[data-field="correct"]').checked;
+      tr.classList.remove('row-highlight-correct','row-highlight-wrong');
+      if(!ans) return; // don't highlight if no answer
+      if(checked) tr.classList.add('row-highlight-correct');
+      else tr.classList.add('row-highlight-wrong');
+    }
+
+    // populate table
+    for(let i=0;i<ROWS;i++) tbody.appendChild(createRow(i));
+
+    // Export CSV
+    function exportCSV(){
+      const rows = [];
+      const headers = ['SeqNo','Answer','Correct'];
+      rows.push(headers);
+      document.querySelectorAll('#qTable tbody tr').forEach(tr=>{
+        const seq = tr.dataset.index;
+        const answer = tr.querySelector('input[data-field="answer"]').value.replace(/\"/g,'""');
+        const correct = tr.querySelector('input[data-field="correct"]').checked ? 'TRUE' : 'FALSE';
+        rows.push([seq, `"${answer}"`, correct]);
+      });
+      const csvContent = rows.map(r=>r.join(',')).join('\n');
+      const blob = new Blob([csvContent],{type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.download = `QuestionBank_${ts}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // Download JSON
+    function downloadJson(){
+      const data = [];
+      document.querySelectorAll('#qTable tbody tr').forEach(tr=>{
+        data.push({
+          seq: Number(tr.dataset.index),
+          answer: tr.querySelector('input[data-field="answer"]').value,
+          correct: tr.querySelector('input[data-field="correct"]').checked
+        });
+      });
+      const blob = new Blob([JSON.stringify(data, null, 2)],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `QuestionBank_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // clear
+    function clearAll(){
+      if(!confirm('Clear all answers and uncheck all boxes?')) return;
+      document.querySelectorAll('#qTable tbody tr').forEach(tr=>{
+        tr.querySelector('input[data-field="answer"]').value = '';
+        tr.querySelector('input[data-field="correct"]').checked = false;
+        tr.classList.remove('row-highlight-correct','row-highlight-wrong');
+      });
+    }
+
+    document.getElementById('exportCsv').addEventListener('click', exportCSV);
+    document.getElementById('downloadJson').addEventListener('click', downloadJson);
+    document.getElementById('clearAll').addEventListener('click', clearAll);
+  </script>
+</body>
+</html>
